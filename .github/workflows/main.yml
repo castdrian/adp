@@ -26,17 +26,14 @@ concurrency:
   cancel-in-progress: false
   
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  process_adp:
+    if: ${{ inputs.deploy_type == 'process_adp_and_deploy' }}
     runs-on: macos-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
       - name: Download and Process ADP
-        if: ${{ inputs.deploy_type == 'process_adp_and_deploy' }}
         run: |
           # Check if ADP ID is provided
           if [ -z "${{ inputs.adp_id }}" ]; then
@@ -193,6 +190,27 @@ jobs:
           
           echo "app-repo.json has been updated"
 
+      - name: Commit changes
+        run: |
+          git config --global user.name 'GitHub Actions'
+          git config --global user.email 'actions@github.com'
+          git add app-repo.json adps/
+          git commit -m "Update app-repo.json and add ADP files for ${{ inputs.adp_id }}"
+          git push
+
+  deploy:
+    needs: [process_adp]
+    if: ${{ always() && (inputs.deploy_type == 'process_adp_and_deploy' && needs.process_adp.result == 'success' || inputs.deploy_type == 'simple_deploy') }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
@@ -208,12 +226,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
-      - name: Commit changes
-        if: ${{ inputs.deploy_type == 'process_adp_and_deploy' }}
-        run: |
-          git config --global user.name 'GitHub Actions'
-          git config --global user.email 'actions@github.com'
-          git add app-repo.json adps/
-          git commit -m "Update app-repo.json and add ADP files for ${{ inputs.adp_id }}"
-          git push
