@@ -13,13 +13,17 @@
 		"name": "AudioYoink",
 		"bundleIdentifier": "dev.adrian.AudioYoink",
 		"marketplaceID": "6738115469",
-		"developerName": "Example Developer",
-		"subtitle": "An awesome app.",
-		"localizedDescription": "This is an awesome app only available on AltStore.",
+		"developerName": "Adrian Castro",
+		"subtitle": "audiobooks made easy",
+		"localizedDescription": "an audiobook downloader for iOS written in swift",
 		"iconURL": "https://raw.githubusercontent.com/castdrian/AudioYoink/refs/heads/main/AudioYoink/Assets.xcassets/AppIcon.appiconset/AppIcon%403x.png",
 		"tintColor": "#a656e2",
 		"category": "other",
-		"screenshots": [],
+		"screenshots": [
+			"https://adriancastro.dev/cy3u7tgn6lms.PNG",
+			"https://adriancastro.dev/ip36hzgwmnbr.PNG",
+			"https://adriancastro.dev/3pgezhzudvjf.PNG"
+		],
 		"versions": [
 		  {
 			"downloadURL": "https://adp.adriancastro.dev/adps/a3476d14-baa0-4bbc-80b2-28946ccb7946",
