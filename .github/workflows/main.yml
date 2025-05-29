@@ -1,6 +1,9 @@
 name: Deploy
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       deploy_type:
@@ -27,7 +30,7 @@ concurrency:
   
 jobs:
   process_adp:
-    if: ${{ inputs.deploy_type == 'process_adp_and_deploy' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.deploy_type == 'process_adp_and_deploy' }}
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -199,8 +202,10 @@ jobs:
           git push
 
   deploy:
+    # For workflow_dispatch: Run after process_adp if it ran and succeeded, or directly if simple_deploy was chosen
+    # For push events: Always run since it's a simple deploy
     needs: [process_adp]
-    if: ${{ always() && (inputs.deploy_type == 'process_adp_and_deploy' && needs.process_adp.result == 'success' || inputs.deploy_type == 'simple_deploy') }}
+    if: ${{ always() && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.deploy_type == 'simple_deploy' || (inputs.deploy_type == 'process_adp_and_deploy' && needs.process_adp.result == 'success')))) }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
