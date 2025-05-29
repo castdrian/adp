@@ -20,9 +20,21 @@
 		"tintColor": "#a656e2",
 		"category": "other",
 		"screenshots": [
-			"https://adriancastro.dev/cy3u7tgn6lms.PNG",
-			"https://adriancastro.dev/ip36hzgwmnbr.PNG",
-			"https://adriancastro.dev/3pgezhzudvjf.PNG"
+			{
+				"imageURL": "https://adriancastro.dev/cy3u7tgn6lms.PNG",
+				"width": 1290,
+				"height": 2796
+			},
+			{
+				"imageURL": "https://adriancastro.dev/ip36hzgwmnbr.PNG",
+				"width": 1290,
+				"height": 2796
+			},
+			{
+				"imageURL": "https://adriancastro.dev/3pgezhzudvjf.PNG",
+				"width": 1290,
+				"height": 2796
+			}
 		],
 		"versions": [
 		  {
