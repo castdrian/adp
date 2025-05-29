@@ -1,0 +1,43 @@
+{
+	"name": "Adrian's Apps",
+	"subtitle": "A source for all of my apps",
+	"description": "Welcome to my source! Here you'll find all of my apps.",
+	"iconURL": "https://avatars.githubusercontent.com/u/22133246?v=4",
+	"website": "https://adp.adriancastro.dev",
+	"patreonURL": "",
+	"tintColor": "#a656e2",
+	"featuredApps": [
+	  "dev.adrian.AudioYoink"
+	],
+	"apps": [
+	  {
+		"name": "AudioYoink",
+		"bundleIdentifier": "dev.adrian.AudioYoink",
+		"marketplaceID": "6738115469",
+		"developerName": "Example Developer",
+		"subtitle": "An awesome app.",
+		"localizedDescription": "This is an awesome app only available on AltStore.",
+		"iconURL": "https://raw.githubusercontent.com/castdrian/AudioYoink/refs/heads/main/AudioYoink/Assets.xcassets/AppIcon.appiconset/AppIcon%403x.png",
+		"tintColor": "#a656e2",
+		"category": "other",
+		"screenshots": [],
+		"versions": [
+		  {
+			"downloadURL": "https://adp.adriancastro.dev/adps/a3476d14-baa0-4bbc-80b2-28946ccb7946",
+			"size": 2100000,
+			"version": "1.0.0",
+			"buildVersion": "5",
+			"date": "2025-05-29T14:14:00+02:00",
+			"localizedDescription": "initial release",
+			"minOSVersion": "17.0"
+		  }
+		],
+		"appPermissions": {
+		  "entitlements": [],
+		  "privacy": {}
+		},
+		"patreon": {}
+	  }
+	],
+	"news": []
+  }
