@@ -1,57 +1,66 @@
 {
-	"name": "Adrian's Apps",
-	"subtitle": "A source for all of my apps",
-	"description": "Welcome to my source! Here you'll find all of my apps.",
-	"iconURL": "https://avatars.githubusercontent.com/u/22133246?v=4",
-	"website": "https://adp.adriancastro.dev",
-	"tintColor": "#a656e2",
-	"featuredApps": [
-	  "dev.adrian.AudioYoink"
-	],
-	"apps": [
-	  {
-		"name": "AudioYoink",
-		"bundleIdentifier": "dev.adrian.AudioYoink",
-		"marketplaceID": "6738115469",
-		"developerName": "Adrian Castro",
-		"subtitle": "audiobooks made easy",
-		"localizedDescription": "an audiobook downloader for iOS written in swift",
-		"iconURL": "https://raw.githubusercontent.com/castdrian/AudioYoink/refs/heads/main/AudioYoink/Assets.xcassets/AppIcon.appiconset/AppIcon%403x.png",
-		"tintColor": "#a656e2",
-		"category": "other",
-		"screenshots": [
-			{
-				"imageURL": "https://adriancastro.dev/cy3u7tgn6lms.PNG",
-				"width": 1290,
-				"height": 2796
-			},
-			{
-				"imageURL": "https://adriancastro.dev/ip36hzgwmnbr.PNG",
-				"width": 1290,
-				"height": 2796
-			},
-			{
-				"imageURL": "https://adriancastro.dev/3pgezhzudvjf.PNG",
-				"width": 1290,
-				"height": 2796
-			}
-		],
-		"versions": [
-		  {
-			"downloadURL": "https://adp.adriancastro.dev/adps/a3476d14-baa0-4bbc-80b2-28946ccb7946",
-			"size": 2100000,
-			"version": "1.0.0",
-			"buildVersion": "5",
-			"date": "2025-05-29T14:14:00+02:00",
-			"localizedDescription": "initial release",
-			"minOSVersion": "17.0"
-		  }
-		],
-		"appPermissions": {
-		  "entitlements": [],
-		  "privacy": {}
-		}
-	  }
-	],
-	"news": []
-  }
+  "name": "Adrian's Apps",
+  "subtitle": "A source for all of my apps",
+  "description": "Welcome to my source! Here you'll find all of my apps.",
+  "iconURL": "https://avatars.githubusercontent.com/u/22133246?v=4",
+  "website": "https://adp.adriancastro.dev",
+  "tintColor": "#a656e2",
+  "featuredApps": [
+    "dev.adrian.AudioYoink"
+  ],
+  "apps": [
+    {
+      "name": "AudioYoink",
+      "bundleIdentifier": "dev.adrian.AudioYoink",
+      "marketplaceID": "6738115469",
+      "developerName": "Adrian Castro",
+      "subtitle": "audiobooks made easy",
+      "localizedDescription": "an audiobook downloader for iOS written in swift",
+      "iconURL": "https://raw.githubusercontent.com/castdrian/AudioYoink/refs/heads/main/AudioYoink/Assets.xcassets/AppIcon.appiconset/AppIcon%403x.png",
+      "tintColor": "#a656e2",
+      "category": "other",
+      "screenshots": [
+        {
+          "imageURL": "https://adriancastro.dev/cy3u7tgn6lms.PNG",
+          "width": 1290,
+          "height": 2796
+        },
+        {
+          "imageURL": "https://adriancastro.dev/ip36hzgwmnbr.PNG",
+          "width": 1290,
+          "height": 2796
+        },
+        {
+          "imageURL": "https://adriancastro.dev/3pgezhzudvjf.PNG",
+          "width": 1290,
+          "height": 2796
+        }
+      ],
+      "versions": [
+        {
+          "downloadURL": "https://adp.adriancastro.dev/adps/aae09478-3a49-492e-ac13-0225fc2ad3fb",
+          "size": 206063832,
+          "version": "1.1.0",
+          "buildVersion": "7",
+          "date": "2025-09-11T16:43:16+00:00",
+          "localizedDescription": "Update via AltStore PAL",
+          "minOSVersion": "17"
+        },
+        {
+          "downloadURL": "https://adp.adriancastro.dev/adps/a3476d14-baa0-4bbc-80b2-28946ccb7946",
+          "size": 2100000,
+          "version": "1.0.0",
+          "buildVersion": "5",
+          "date": "2025-05-29T14:14:00+02:00",
+          "localizedDescription": "initial release",
+          "minOSVersion": "17.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      }
+    }
+  ],
+  "news": []
+}
