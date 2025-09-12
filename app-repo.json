@@ -38,6 +38,15 @@
       ],
       "versions": [
         {
+          "downloadURL": "https://adp.adriancastro.dev/adps/975caf63-3be9-4761-9c02-ccf8527e8089",
+          "size": 187329631,
+          "version": "1.2.0",
+          "buildVersion": "7",
+          "date": "2025-09-12T19:52:32+00:00",
+          "localizedDescription": "Update via AltStore PAL",
+          "minOSVersion": "17"
+        },
+        {
           "downloadURL": "https://adp.adriancastro.dev/adps/aae09478-3a49-492e-ac13-0225fc2ad3fb",
           "size": 206063832,
           "version": "1.1.0",
