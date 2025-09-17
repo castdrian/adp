@@ -11,63 +11,99 @@ permissions:
 jobs:
   sync_adps:
     runs-on: macos-latest
+    outputs:
+      adp_id: ${{ steps.find_new_adp.outputs.adp_id }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Find new ADP
         id: find_new_adp
         env:
           ASC_API_KEY: ${{ secrets.ASC_API_KEY }}
           ASC_API_KEY_ID: ${{ secrets.ASC_API_KEY_ID }}
+          ASC_API_ISSUER_ID: ${{ secrets.ASC_API_ISSUER_ID }}
+        shell: bash
         run: |
+          set -euo pipefail
           echo "$ASC_API_KEY" > asc_api_key.p8
+          b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+          der_to_rs_b64url() {
+            local hex r s
+            hex=$(openssl asn1parse -inform DER -in /dev/stdin 2>/dev/null | awk -F: '/prim: INTEGER/ {print $NF}')
+            r=$(echo "$hex" | sed -n '1p' | tr -d ' \r\n')
+            s=$(echo "$hex" | sed -n '2p' | tr -d ' \r\n')
+            [ -n "${r:-}" ] || { echo "ES256 DER parse failed" >&2; return 1; }
+            r=${r#00}; s=${s#00}
+            [ $(( ${#r} % 2 )) -eq 0 ] || r="0$r"
+            [ $(( ${#s} % 2 )) -eq 0 ] || s="0$s"
+            while [ ${#r} -lt 64 ]; do r="0$r"; done
+            while [ ${#s} -lt 64 ]; do s="0$s"; done
+            printf '%s' "$r$s" | xxd -r -p | b64url
+          }
           jwt_header=$(jq -nc --arg kid "$ASC_API_KEY_ID" '{alg:"ES256",kid:$kid,typ:"JWT"}')
           now=$(date +%s)
-          jwt_payload=$(jq -nc --arg iss "$ASC_API_KEY_ID" --arg aud "appstoreconnect-v1" --argjson iat "$now" --argjson exp "$((now+1200))" '{iss:$iss,iat:$iat,exp:$exp,aud:$aud}')
-          b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+          jwt_payload=$(jq -nc --arg iss "$ASC_API_ISSUER_ID" --arg aud "appstoreconnect-v1" --argjson iat "$now" --argjson exp "$((now+1200))" '{iss:$iss,iat:$iat,exp:$exp,aud:$aud}')
           header_b64=$(printf '%s' "$jwt_header"  | b64url)
           payload_b64=$(printf '%s' "$jwt_payload" | b64url)
           signing_input="$header_b64.$payload_b64"
-          signature=$(printf '%s' "$signing_input" | openssl dgst -sha256 -sign asc_api_key.p8 -binary | openssl base64 -A | tr '+/' '-_' | tr -d '=')
+          signature=$(
+            printf '%s' "$signing_input" \
+            | openssl dgst -sha256 -sign asc_api_key.p8 -binary \
+            | der_to_rs_b64url
+          )
           token="$signing_input.$signature"
-          apps_json=$(curl -sS -g -H "Authorization: Bearer $token" "https://api.appstoreconnect.apple.com/v1/apps?filter%5BreviewSubmissions.platform%5D=IOS&limit=200")
-          app_meta=$(printf '%s' "$apps_json" | jq -r '.data[] | [.id, .attributes.bundleId] | @tsv')
+          asc_get() {
+            local url="$1" resp
+            resp=$(curl -sS -g -H "Authorization: Bearer $token" "$url")
+            if jq -e '.errors? | length>0' >/dev/null <<<"$resp"; then
+              echo "ASC API error: $(jq -c '.errors' <<<"$resp")" >&2
+              exit 1
+            fi
+            echo "$resp"
+          }
+          apps_json=$(asc_get "https://api.appstoreconnect.apple.com/v1/apps?filter%5BreviewSubmissions.platform%5D=IOS&limit=200")
+          app_meta=$(printf '%s' "$apps_json" | jq -r '.data[] | [.id, .attributes.bundleId] | @tsv' || true)
+          [ -n "${app_meta:-}" ] || { echo "No apps returned."; rm -f asc_api_key.p8; exit 0; }
           app_ids=$(printf '%s\n' "$app_meta" | cut -f1)
           local_ids=$( { ls -1 adps 2>/dev/null | grep -v '^\.' | grep -E '^[a-f0-9-]{36}$' || true; } )
           adp_records=""
           for id in $app_ids; do
             bundle_id=$(printf '%s\n' "$app_meta" | awk -v id="$id" -F'\t' '$1==id{print $2; exit}')
-            versions_json=$(curl -sS -g -H "Authorization: Bearer $token" "https://api.appstoreconnect.apple.com/v1/apps/$id/appStoreVersions?include=alternativeDistributionPackage&fields%5BappStoreVersions%5D=platform,versionString,appVersionState,reviewType,alternativeDistributionPackage&limit=50")
-            recs=$(printf '%s' "$versions_json" | jq -r '.data[] | select(.attributes.appVersionState=="READY_FOR_DISTRIBUTION" and .attributes.reviewType=="NOTARIZATION") | [(.relationships.alternativeDistributionPackage.data.id // empty), "'$bundle_id'", .attributes.versionString] | @tsv' | awk 'NF')
-            [ -n "${recs:-}" ] && adp_records="${adp_records}${adp_records:+\n}${recs}"
+            versions_json=$(asc_get "https://api.appstoreconnect.apple.com/v1/apps/$id/appStoreVersions?include=alternativeDistributionPackage&fields%5BappStoreVersions%5D=platform,versionString,appVersionState,reviewType,alternativeDistributionPackage&limit=50")
+            recs=$(printf '%s' "$versions_json" | jq -r '
+              .data[]
+              | select(.attributes.appVersionState=="READY_FOR_DISTRIBUTION" and .attributes.reviewType=="NOTARIZATION")
+              | [(.relationships.alternativeDistributionPackage.data.id // empty), "'"$bundle_id"'", .attributes.versionString]
+              | @tsv' | awk 'NF' || true)
+            [ -n "${recs:-}" ] && adp_records="${adp_records}${adp_records:+}${recs}"
           done
+          [ -n "${adp_records:-}" ] || { echo "No ADP IDs found."; rm -f asc_api_key.p8; exit 0; }
           adp_records_dedup=$(printf '%s\n' "$adp_records" | awk -F'\t' '!seen[$1]++')
           new_adp=""
-          for rec in $(printf '%s\n' "$adp_records_dedup"); do
-            adp_id=$(echo "$rec" | cut -f1)
+          while IFS= read -r rec; do
+            adp_id=$(printf '%s' "$rec" | cut -f1)
             if ! printf '%s\n' "$local_ids" | grep -Fxq "$adp_id"; then
               new_adp="$adp_id"
               break
             fi
-          done
+          done <<< "$adp_records_dedup"
           if [ -z "$new_adp" ]; then
             echo "No new ADP IDs found."
+            rm -f asc_api_key.p8
             exit 0
           fi
-          echo "Found new ADP: $new_adp"
-          altstore_response=$(curl -s -X GET "https://api.altstore.io/adps/$new_adp")
+          altstore_response=$(curl -s "https://api.altstore.io/adps/$new_adp")
           if echo "$altstore_response" | jq -e '.downloadURL' >/dev/null; then
-            echo "ADP $new_adp processed by AltStore."
-            echo "adp_id=$new_adp" >> $GITHUB_OUTPUT
-          else
-            echo "ADP $new_adp not processed by AltStore."
-            exit 0
+            echo "adp_id=$new_adp" >> "$GITHUB_OUTPUT"
           fi
+          rm -f asc_api_key.p8
 
-      - name: Call Deployment Workflow
-        if: steps.find_new_adp.outputs.adp_id
-        uses: ./.github/workflows/main.yml
-        with:
-          deploy_type: process_adp_and_deploy
-          adp_id: ${{ steps.find_new_adp.outputs.adp_id }}
-
+  deploy:
+    if: ${{ needs.sync_adps.outputs.adp_id != '' }}
+    needs: sync_adps
+    uses: ./.github/workflows/main.yml
+    secrets: inherit
+    with:
+      deploy_type: process_adp_and_deploy
+      adp_id: ${{ needs.sync_adps.outputs.adp_id }}
