@@ -38,41 +38,33 @@ jobs:
       
       - name: Download and Process ADP
         run: |
-          # Check if ADP ID is provided
           if [ -z "${{ inputs.adp_id }}" ]; then
             echo "Error: ADP ID is required for process_adp_and_deploy option"
             exit 1
           fi
           
-          # Fetch ADP info
           RESPONSE=$(curl -s -X GET "https://api.altstore.io/adps/${{ inputs.adp_id }}")
           echo "ADP API Response: $RESPONSE"
           
-          # Extract download URL
           DOWNLOAD_URL=$(echo "$RESPONSE" | jq -r '.downloadURL')
           if [ "$DOWNLOAD_URL" = "null" ] || [ -z "$DOWNLOAD_URL" ]; then
             echo "Error: Download URL not found in response"
             exit 1
           fi
           
-          # Create directory for ADP files if it doesn't exist
           mkdir -p "adps/${{ inputs.adp_id }}"
           
-          # Download ADP file
           echo "Downloading ADP from $DOWNLOAD_URL"
           curl -L "$DOWNLOAD_URL" -o "adp.zip"
           
-          # Extract the downloaded file
           unzip -q adp.zip -d "adps/${{ inputs.adp_id }}"
           
-          # Find and read manifest.json
           MANIFEST_FILE="adps/${{ inputs.adp_id }}/manifest.json"
           if [ ! -f "$MANIFEST_FILE" ]; then
             echo "Error: manifest.json not found in downloaded package"
             exit 1
           fi
           
-          # Read app details from manifest.json
           BUNDLE_ID=$(jq -r '.bundleId' "$MANIFEST_FILE")
           VERSION=$(jq -r '.shortVersionString' "$MANIFEST_FILE")
           BUILD=$(jq -r '.bundleVersion' "$MANIFEST_FILE")
@@ -86,11 +78,8 @@ jobs:
           echo "Min OS Version: $MIN_OS"
           echo "Apple Item ID: $APPLE_ITEM_ID"
           
-          # Calculate file size (in bytes)
           SIZE=$(stat -f%z "adp.zip")
-          
-          # Update app-repo.json
-          # Check if app already exists in app-repo.json
+
           APP_INDEX=$(jq --arg bundleId "$BUNDLE_ID" '.apps | map(.bundleIdentifier == $bundleId) | index(true)' app-repo.json)
           CURRENT_DATE=$(date -u +"%Y-%m-%dT%H:%M:%S%z" | sed 's/\([0-9]\{2\}\)$/:\1/')
           DOWNLOAD_URL="https://adp.adriancastro.dev/adps/${{ inputs.adp_id }}"
@@ -98,7 +87,6 @@ jobs:
           if [ "$APP_INDEX" != "null" ]; then
             echo "App exists in app-repo.json at index $APP_INDEX, updating version info"
             
-            # Check if version already exists
             VERSION_EXISTS=$(jq --arg version "$VERSION" --argjson appIndex "$APP_INDEX" '.apps[$appIndex].versions | map(select(.version == $version)) | length' app-repo.json)
             
             if [ "$VERSION_EXISTS" -gt 0 ]; then
@@ -135,16 +123,13 @@ jobs:
                 }] + .apps[$appIndex].versions' app-repo.json > temp.json && mv temp.json app-repo.json
             fi
             
-            # Update marketplaceID if needed
             jq --arg marketplaceID "$APPLE_ITEM_ID" --argjson appIndex "$APP_INDEX" \
               '.apps[$appIndex].marketplaceID = $marketplaceID' app-repo.json > temp.json && mv temp.json app-repo.json
               
           else
             echo "App does not exist in app-repo.json, creating a new entry"
             
-            # Use last part of bundle ID as app name if needed
             APP_NAME=$(echo "$BUNDLE_ID" | awk -F. '{print $NF}')
-            APP_NAME="${APP_NAME^}" # Capitalize first letter
             
             NEW_APP=$(jq -n \
               --arg name "$APP_NAME" \
@@ -160,9 +145,9 @@ jobs:
                 "name": $name,
                 "bundleIdentifier": $bundleId,
                 "marketplaceID": $marketplaceID,
-                "developerName": "App Developer",
-                "subtitle": "New app from AltStore PAL",
-                "localizedDescription": "This app was automatically added via GitHub Actions.",
+                "developerName": "Adrian Castro",
+                "subtitle": "AltStore PAL version of \($name)",
+                "localizedDescription": "AltStore PAL version of \($name)",
                 "iconURL": "",
                 "tintColor": "#a656e2",
                 "category": "other",
@@ -173,8 +158,7 @@ jobs:
                   "version": $version,
                   "buildVersion": $buildVersion,
                   "date": $date,
-                  "localizedDescription": "Update via AltStore PAL",
-                  "minOSVersion": $minOSVersion
+                  "localizedDescription": "Further improvements to overall system stability and other minor adjustments have been made to enhance the user experience."                  "minOSVersion": $minOSVersion
                 }],
                 "appPermissions": {
                   "entitlements": [],
@@ -185,7 +169,6 @@ jobs:
             
             jq --argjson newApp "$NEW_APP" '.apps += [$newApp]' app-repo.json > temp.json && mv temp.json app-repo.json
             
-            # Optionally add to featured apps if it's the first app
             if [ "$(jq '.apps | length' app-repo.json)" -eq 1 ]; then
               jq --arg bundleId "$BUNDLE_ID" '.featuredApps += [$bundleId]' app-repo.json > temp.json && mv temp.json app-repo.json
             fi
@@ -202,8 +185,6 @@ jobs:
           git push
 
   deploy:
-    # For workflow_dispatch: Run after process_adp if it ran and succeeded, or directly if simple_deploy was chosen
-    # For push events: Always run since it's a simple deploy
     needs: [process_adp]
     if: ${{ always() && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.deploy_type == 'simple_deploy' || (inputs.deploy_type == 'process_adp_and_deploy' && needs.process_adp.result == 'success')))) }}
     runs-on: ubuntu-latest
