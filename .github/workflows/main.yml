@@ -1,9 +1,17 @@
+
 name: Deploy
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      deploy_type:
+        required: true
+        type: string
+        default: simple_deploy
+      adp_id:
+        required: false
+        type: string
+
   workflow_dispatch:
     inputs:
       deploy_type:
@@ -18,6 +26,7 @@ on:
         description: 'ADP ID'
         required: false
         type: string
+
 
 permissions:
   contents: write
