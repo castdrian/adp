@@ -63,6 +63,7 @@ jobs:
             echo "ADP $new_adp not processed by AltStore."
             exit 0
           fi
+
       - name: Call Deployment Workflow
         if: steps.find_new_adp.outputs.adp_id
         uses: ./.github/workflows/main.yml
